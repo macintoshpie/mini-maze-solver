@@ -1,6 +1,7 @@
 import sys
 from collections import deque
 import configparser
+import time
 
 from PIL import Image, ImageDraw, ImageFont
 import tweepy
@@ -267,9 +268,10 @@ class BirdUp:
         else:
             self.client.update_status("hmmm")
 
-
-ts = BirdUp()
-ts.getSolveTweet()
+while True:
+    ts = BirdUp()
+    ts.getSolveTweet()
+    time.sleep(60)
 # mazeList = ts.getMazeText(200)
 
 

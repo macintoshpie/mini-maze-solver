@@ -2,6 +2,7 @@ import sys
 from collections import deque
 import configparser
 import time
+import datetime
 
 from PIL import Image, ImageDraw, ImageFont
 import tweepy
@@ -238,16 +239,19 @@ class BirdUp:
             print('Connected as @{}, you can start to tweet !'.format(self.client.me().screen_name))
             self.client_id = self.client.me().id
 
-            self.tweet = self.getMazeTweets(1)[0]
-            self.tweetID = self.tweet.id
-            self.maze = Maze(self.tweet.text)
-            self.solver = MazeSolver(self.maze)
+
 
     def getMazeTweets(self, number):
         return self.client.user_timeline(screen_name = "miniaturemazes",count=number)
 
     def getMazeText(self, number):
         return [tweet.text for tweet in self.getMazeTweets(number)]
+
+    def getMostRecentTweet(self):
+        self.tweet = self.getMazeTweets(1)[0]
+        self.tweetID = self.tweet.id
+        self.maze = Maze(self.tweet.text)
+        self.solver = MazeSolver(self.maze)
 
     def tweetMaze(self):
         #tweet the solution in response to specific maze or just @ the account??
@@ -265,12 +269,23 @@ class BirdUp:
 
             self.client.update_with_media(filename='test.gif', status=robot_emotion)#, in_reply_to_status_id=self.tweetID)
         else:
-            self.client.update_status("hmmm")
+            #self.client.update_status("hmmm")
+            print("no tweet...")
+
+sleep_dur = 60
+t_bot = BirdUp()
 
 while True:
-    ts = BirdUp()
-    ts.getSolveTweet()
-    time.sleep(60)
+    t_bot.getMostRecentTweet()
+    adjusted_tweet_time = t_bot.tweet.created_at - datetime.timedelta(hours=7)
+    print(datetime.datetime.now(), "-", adjusted_tweet_time)
+    
+    time_since_last_tweet = datetime.datetime.now() - adjusted_tweet_time
+
+    if (time_since_last_tweet) < datetime.timedelta(seconds=sleep_dur):
+        t_bot.getSolveTweet()
+
+    time.sleep(sleep_dur)
 # mazeList = ts.getMazeText(200)
 
 

@@ -263,8 +263,7 @@ class BirdUp:
             else:
                 robot_emotion = "😢"
 
-            #self.client.update_with_media(filename='test.gif', status=robot_emotion)#, in_reply_to_status_id=self.tweetID)
-            self.client.update_status(robot_emotion)
+            self.client.update_with_media(filename='test.gif', status=robot_emotion)#, in_reply_to_status_id=self.tweetID)
         else:
             self.client.update_status("hmmm")
 

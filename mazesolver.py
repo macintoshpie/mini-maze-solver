@@ -135,7 +135,7 @@ class MazeSolver:
         # Prepare image
         solutionImage = Image.new('RGBA', (720, 360), (255, 255, 255, 0))
         drawer = ImageDraw.Draw(solutionImage)
-        font = ImageFont.truetype("/Library/Fonts/Arial Unicode.ttf",20)
+        font = ImageFont.truetype("Arial Unicode.ttf",20)
 
         # Calculate spacing factors - TODO: try to find a way to keep 2:1 ratio...
         scaling_factor = max([drawer.textsize(val, font)[0] for key, val in self.visual_dict.items()])

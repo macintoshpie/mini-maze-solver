@@ -244,6 +244,7 @@ class BirdUp:
                 robot_emotion = "😢"
 
             self.client.update_with_media(filename='test.gif', status="@miniaturemazes " + robot_emotion, in_reply_to_status_id=self.tweetID)
+            self.client.retweet(self.tweetID)
         else:
             print("no tweet...")
 

@@ -65,15 +65,8 @@ class Maze:
         self.finish = (21, 45)
 
     def expandMaze(self, mazeString):
-        #I could go ahead and map in the list comprehension...
-        #characterArray = [[cell for cell in row] for row in mazeString.splitlines()]
+
         condensedGrid = [[self.charToGrid(cell) for cell in row] for row in mazeString.splitlines()]
-
-        #condensedGrid = []
-
-        #for row in characterArray:
-        #    condensedGrid.append([self.characterToGrid(character) for character in row])
-
 
         expandedGrid = [[0 for col in range(self.NUM_COL)] for row in range(self.NUM_ROW)]
 
@@ -101,9 +94,9 @@ class MazeSolver:
 
     wall_code =  "☐" #   "⬜" "■" "▢"
     empty_code = " "
-    path_code =  "●"# "○"
-    start_code =  "◉"#"◯"
-    finish_code = "◉" #"◯"
+    path_code =  "●" # "○"
+    start_code =  "◉" # "◯"
+    finish_code = "◉" # "◯"
 
     visual_dict = {0: empty_code, 1: wall_code, path_code: path_code, start_code: start_code, finish_code: finish_code}
 
@@ -134,19 +127,17 @@ class MazeSolver:
 
 
         # Prepare image
-        solutionImage = Image.new('RGBA', (720, 360), (255, 255, 255, 0))
+        solutionImage = Image.new('RGB', (720, 360), (255, 255, 255))
         drawer = ImageDraw.Draw(solutionImage)
-        font = ImageFont.truetype("Arial Unicode.ttf",20)
+        font = ImageFont.truetype("Arial Unicode.ttf", 20)
 
-        # Calculate spacing factors - TODO: try to find a way to keep 2:1 ratio...
+        # Calculate how far apart each character should be by finding the max width of all characters used
         scaling_factor = max([drawer.textsize(val, font)[0] for key, val in self.visual_dict.items()])
-        #spacing_width_dict = {key: drawer.textsize(val, font)[0] for key, val in self.visual_dict.items()}
-        #spacing_height_dict = {key: drawer.textsize(val, font)[1] for key, val in self.visual_dict.items()}
 
-        # Populate image
+        # Draw image
         for row_idx, row in enumerate(solutionGrid):
             for col_idx, block in enumerate(row):
-                drawer.text((col_idx * scaling_factor, row_idx * scaling_factor), self.visual_dict[block], fill=(1, 0, 0), font=font)
+                drawer.text((col_idx * scaling_factor, row_idx * scaling_factor), self.visual_dict[block], fill=(0, 0, 0), font=font)
 
         return solutionImage
 
@@ -173,33 +164,23 @@ class MazeSolver:
             print("U DED ET YEAA")
             print(len(self.visited))
 
-
-
-
     def find_path_bfs(self):
-        #queue = deque([("", self.maze.start)])
         queue = deque([([], self.maze.start)])
-        #visited = set()
 
         while queue:
             path, current = queue.popleft()
-            #print("PATH top", path)
-            #print("N:", self.getNeighbors(current))
+
             if current == self.maze.finish:
                 self.finished = True
                 return path
             if current in self.visited:
                 continue
-            #visited.add(current)
+
             self.visited.append(current)
-            #for direction, neighbour in graph[current]:
-            #print("PATH bottom", path)
+
             for neighbor in self.getNeighbors(current):
-                #print("PATH vbottom", path)
                 queue.append((path + [neighbor], neighbor))
-                #print("PATH zbottom", path)
-                #print(queue)
-        #return "NO WAY!"
+
         return path
 
     def getNeighbors(self, position):
@@ -214,7 +195,6 @@ class MazeSolver:
         return (self.maze.map[position[0]][position[1]] == 0) and (position not in self.visited)
 
 class BirdUp:
-    s_name = "miniaturemazes"
 
     def __init__(self):
         config = configparser.ConfigParser()
@@ -239,8 +219,6 @@ class BirdUp:
             print('Connected as @{}, you can start to tweet !'.format(self.client.me().screen_name))
             self.client_id = self.client.me().id
 
-
-
     def getMazeTweets(self, number):
         return self.client.user_timeline(screen_name = "miniaturemazes",count=number)
 
@@ -250,55 +228,40 @@ class BirdUp:
     def getMostRecentTweet(self):
         self.tweet = self.getMazeTweets(1)[0]
         self.tweetID = self.tweet.id
+
+    def updateMaze(self):
         self.maze = Maze(self.tweet.text)
         self.solver = MazeSolver(self.maze)
 
-    def tweetMaze(self):
-        #tweet the solution in response to specific maze or just @ the account??
-        # if finished, make the comment a smiley emoji. Otherwise, a sad emoji
-        pass
-    def getSolveTweet(self):
+    def solveAndTweet(self):
         if self.tweet:
             self.solver.solve()
             img = self.solver.toImage()
-            img.save('test.gif', 'GIF', transparency=0)
+            img.save('test.gif', 'GIF')
             if self.solver.finished:
                 robot_emotion = "😄"
             else:
                 robot_emotion = "😢"
 
-            self.client.update_with_media(filename='test.gif', status=robot_emotion)#, in_reply_to_status_id=self.tweetID)
+            self.client.update_with_media(filename='test.gif', status="@miniaturemazes " + robot_emotion, in_reply_to_status_id=self.tweetID)
         else:
-            #self.client.update_status("hmmm")
             print("no tweet...")
 
 sleep_dur = 60
 t_bot = BirdUp()
 
+t_bot.getMostRecentTweet()
+previousTweetID = t_bot.tweetID
+
 while True:
     t_bot.getMostRecentTweet()
-    adjusted_tweet_time = t_bot.tweet.created_at - datetime.timedelta(hours=7)
-    print(datetime.datetime.now(), "-", adjusted_tweet_time)
-    
-    time_since_last_tweet = datetime.datetime.now() - adjusted_tweet_time
 
-    if (time_since_last_tweet) < datetime.timedelta(seconds=sleep_dur):
-        t_bot.getSolveTweet()
+    mostRecentTweetID = t_bot.tweetID
+
+    if mostRecentTweetID != previousTweetID:
+        t_bot.updateMaze()
+        t_bot.solveAndTweet()
+        print('solved for tweet ', mostRecentTweetID)
+        previousTweetID = mostRecentTweetID
 
     time.sleep(sleep_dur)
-# mazeList = ts.getMazeText(200)
-
-
-# finishable = 0
-
-# for i, maze in enumerate(mazeList):
-#     print(maze)
-#     m = Maze(maze)
-#     solver = MazeSolver(m, 'myBootySoFresh')
-#     solver.solve()
-#     if solver.finished:
-#         finishable += 1
-#     if i%20 == 0:
-#         img = solver.toImage()
-#         img.save('test' + str(i) + '.gif', 'GIF', transparency=0)
-# print(finishable)
